@@ -7,3 +7,9 @@ CREATE OR REPLACE FUNCTION acquire_table(codebar integer) RETURNS integer AS $$
       return next_id;
     END;
     $$ LANGUAGE plpgsql;
+	
+	
+/* 
+ * Usage
+ */
+ select acquire_table(1);
