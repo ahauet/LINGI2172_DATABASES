@@ -88,27 +88,3 @@ $$
 	END;
 $$ LANGUAGE plpgsql;
 	
-
-/* POST-IT BELOW */
- /* Use this to select all the order_lines for a given token
- select d.name, od.qty
-from drink d, ordered_drink od, "order" o
-where d.drink_id = od.drink_id 
-	and o.order_id = od.order_id
-	and o.passes_by = 2
-*/
-/* Use this to select all the drinks ordered for a token and their quantities
-select distinct(d.name) as name, sum(od.qty) as qty
-from drink d, ordered_drink od, "order" o
-where d.drink_id = od.drink_id 
-	and o.order_id = od.order_id
-	and o.passes_by = 2
-group by d.name
-*/
-/* Use this to compute the total for a given token
-select sum(d.price* od.qty) as total
-from drink d, ordered_drink od, "order" o
-where d.drink_id = od.drink_id 
-	and o.order_id = od.order_id
-	and o.passes_by = 2
-*/

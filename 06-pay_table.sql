@@ -1,4 +1,3 @@
-
 /*
  * PayTable
  * IN: a client token

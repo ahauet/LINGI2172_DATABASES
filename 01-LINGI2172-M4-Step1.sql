@@ -1,5 +1,6 @@
 ﻿/*
  * This script generates the schema of the database for the step 1 of the M4
+ * The sequences are used to auto-generate the ID of some tables
  */
 
 DROP TABLE IF EXISTS payment;
@@ -20,13 +21,11 @@ DROP SEQUENCE IF EXISTS payment_id_seq;
 CREATE SEQUENCE table_id_seq;
 CREATE TABLE "table" (
     table_id integer NOT NULL PRIMARY KEY DEFAULT nextval('table_id_seq')
-    /*codebar varchar(12) NOT NULL*/
 );
 
 CREATE SEQUENCE token_id_seq;
 CREATE TABLE client (
     token_id integer NOT NULL PRIMARY KEY DEFAULT nextval('token_id_seq')
-    /*placed_at integer NOT NULL UNIQUE REFERENCES "table"(table_id)*/
 );
 
 /* The UNIQUE constraint on table_id ensure that a table will not be reserved by 2 clients at the same time */
