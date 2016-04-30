@@ -5,7 +5,10 @@ This project is organized in subfolders, one per step.
 ## Step 1
 ### Set up
 Run the scripts in the numerated order in order to set up the database.
-### Test
+## Test
+TODO
+
+## Step 2
 The sparkling water scenario can be runned using the Ruby script named **sparkling_water.rb**. In order to run it, you must have
 -  [ruby](https://www.ruby-lang.org/en/) on your machine
 - the [ruby-pg](https://github.com/ged/ruby-pg) gem
