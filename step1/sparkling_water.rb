@@ -25,7 +25,6 @@ conn.exec( acquire_table_request ) do |result|
   puts "You scanned the codebar and your token is " + token
 end
 
-
 # 2. Order the first sparkling water
 # Declare this query later because we need the token to be set
 order_sparkling_water = "select order_drinks(#{token}, array[(6, 1)]::order_line[])"
@@ -44,7 +43,7 @@ conn.exec( order_sparkling_water ) do |result|
   puts "You ordered a sparkling water. The order id is " + result[0]['order_drinks']
 end
 
-# 5. Look at the bill and pay by given 10€
+# 5. Look at the bill and pay with 10€
 pay_and_leave = "select pay_table(#{token}, 10.0)"
 conn.exec( look_at_the_bill ) do |result|
   puts "You looked at the bill : " + result[0]['issue_ticket']
