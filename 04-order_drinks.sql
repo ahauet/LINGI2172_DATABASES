@@ -2,7 +2,7 @@ DROP FUNCTION IF EXISTS order_drinks(token integer, orders order_line[]);
 DROP TYPE IF EXISTS order_line;
 
 /*
- * A new type can be used to store a tuple of primitive types
+ * A special type used to stored a drink# associated to a quantity
  */
 CREATE TYPE order_line AS (
 	drink_id integer,
