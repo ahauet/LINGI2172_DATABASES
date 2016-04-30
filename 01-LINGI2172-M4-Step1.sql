@@ -1,7 +1,6 @@
-﻿--PostgreSQL Maestro 15.4.0.3
-------------------------------------------
---Host     : localhost
---Database : LINGI2172-M4-Step1
+﻿/*
+ * This script generates the schema of the database for the step 1 of the M4
+ */
 
 DROP TABLE IF EXISTS payment;
 DROP TABLE IF EXISTS ordered_drink;
@@ -30,9 +29,10 @@ CREATE TABLE client (
     /*placed_at integer NOT NULL UNIQUE REFERENCES "table"(table_id)*/
 );
 
+/* The UNIQUE constraint on table_id ensure that a table will not be reserved by 2 clients at the same time */
 CREATE TABLE placement (
     client_id integer NOT NULL REFERENCES client(token_id),
-    table_id integer NOT NULL REFERENCES "table"(table_id),
+    table_id integer NOT NULL UNIQUE REFERENCES "table"(table_id),
     PRIMARY KEY (client_id, table_id)
 ) ;
 

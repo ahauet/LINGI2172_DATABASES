@@ -1,3 +1,7 @@
+/*
+ * This script populates the tables with some placeholder data
+ */
+ 
 insert into "table" (table_id) values (1);
 insert into "table" (table_id) values (2);
 insert into "table" (table_id) values (3);
