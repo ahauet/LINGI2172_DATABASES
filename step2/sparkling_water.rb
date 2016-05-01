@@ -15,6 +15,18 @@ end.parse!
 # Some variables
 acquire_table_request = "select acquire_table(1)"
 token = nil
+def puts_formated_bill(res)
+  total = res[/([1-9][0-9]*\.\d{2})/]
+  details = res.scan(/\(\\{0,2}"{0,2}([\w|\s]*)\\{0,2}"{0,2},(\d)\)/)
+  puts "You looked at the bill."
+  puts "The total to pay is : " + total
+  puts "Details below :\n---------------------"
+  details.each {
+    | detail_line |
+    puts detail_line[0] + " => " + detail_line[1]
+    puts "---------------------"
+  }
+end
 
 # First, establish the connection to the database
 conn = PG.connect( dbname: 'LINGI2172-M4-Step1', user: options[:username], password: options[:password] )
@@ -35,7 +47,8 @@ end
 # 3. Look at the bill
 look_at_the_bill = "select issue_ticket(#{token});"
 conn.exec( look_at_the_bill ) do |result|
-  puts "You looked at the bill : " + result[0]['issue_ticket']
+  res = result[0]['issue_ticket']
+  puts_formated_bill(res)
 end
 
 # 4. Order the second sparkling water
@@ -46,7 +59,8 @@ end
 # 5. Look at the bill and pay with 10€
 pay_and_leave = "select pay_table(#{token}, 10.0)"
 conn.exec( look_at_the_bill ) do |result|
-  puts "You looked at the bill : " + result[0]['issue_ticket']
+  res = result[0]['issue_ticket']
+  puts_formated_bill(res)
 end
 conn.exec( pay_and_leave ) do |result|
   puts "You have paid and you leave...it's sunny outside"
