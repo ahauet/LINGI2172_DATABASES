@@ -1,4 +1,4 @@
-require 'sequel'
+require 'sequel' # NOTE: Sequel uses autocommit mode by default
 require 'optparse'
 
 # Parse args
@@ -18,45 +18,47 @@ new_database = true # a custom boolean value that will be used later to know if 
 begin
   puts 'Creating schema...'
   # The table creation process is quiet easy
-  DB.create_table :tables do
-    primary_key :table_id # by default the primary_key will be of type SERIAL
-  end
+  DB.transaction do # encapsulate this in a transaction because we want ALL the tables to exists or NONE
+    DB.create_table :tables do
+      primary_key :table_id # by default the primary_key will be of type SERIAL
+    end
 
-  DB.create_table :clients do
-    primary_key :token_id
-  end
+    DB.create_table :clients do
+      primary_key :token_id
+    end
 
-  DB.create_table :placements do
-    primary_key [:client_id, :table_id] # we can define multiple primary_keys
-    foreign_key :table_id, :tables, :unique=>true # we can also define some constraint like UNIQUE
-    foreign_key :client_id, :clients
-  end
+    DB.create_table :placements do
+      primary_key [:client_id, :table_id] # we can define multiple primary_keys
+      foreign_key :table_id, :tables, :unique=>true # we can also define some constraint like UNIQUE
+      foreign_key :client_id, :clients
+    end
 
-  DB.create_table :drinks do
-    primary_key :drink_id
-    Float :price, :null=>false
-    String :name, :null=>false
-    String :description
-  end
+    DB.create_table :drinks do
+      primary_key :drink_id
+      Float :price, :null=>false
+      String :name, :null=>false
+      String :description
+    end
 
-  DB.create_table :orders do
-    primary_key :order_id
-    DateTime :order_time
-    foreign_key :passes_by, :clients
-  end
+    DB.create_table :orders do
+      primary_key :order_id
+      DateTime :order_time
+      foreign_key :passes_by, :clients
+    end
 
-  DB.create_table :ordered_drinks do
-    primary_key [:order_id, :drink_id]
-    foreign_key :order_id, :orders
-    foreign_key :drink_id, :drinks
-    Integer :qty, :null=>false
-  end
+    DB.create_table :ordered_drinks do
+      primary_key [:order_id, :drink_id]
+      foreign_key :order_id, :orders
+      foreign_key :drink_id, :drinks
+      Integer :qty, :null=>false
+    end
 
-  DB.create_table :payments do
-    primary_key :payment_id
-    Float :amount_paid
-    foreign_key :made_by, :clients
-  end
+    DB.create_table :payments do
+      primary_key :payment_id
+      Float :amount_paid
+      foreign_key :made_by, :clients
+    end
+  end # COMMIT
   puts 'Done'
 rescue # an error is raised if one of the table already exists in the database. In that case, it means the schema already exists in the database and that we won't have to populate the tables
   puts "Schema arleady exist in the database"
@@ -114,11 +116,13 @@ end
 # POST: issued token can be used for ordering drinks
 def acquire_table(codebar)
   begin
-    client = Client.create() # we can create a client in the databse simply like this. Sequel convert it to a SQL statement INSERT INTO clients ...
-    p = Placement.new # The other way to create a row in the database is by first creating the object
-    p.client_id = client.token_id # then setting its attributes
-    p.table_id = codebar
-    p.save # And finally save it; This is equivalent to => Placement.create(:client_id => client.token_id, :table_id => codebar)
+    DB.transaction do # new explicit transaction to avoid that the generated token at line 120 remains if the table is not free
+      client = Client.create() # we can create a client in the databse simply like this. Sequel convert it to a SQL statement INSERT INTO clients ...
+      p = Placement.new # The other way to create a row in the database is by first creating the object
+      p.client_id = client.token_id # then setting its attributes
+      p.table_id = codebar
+      p.save # And finally save it; This is equivalent to => Placement.create(:client_id => client.token_id, :table_id => codebar)
+    end # COMMIT
     return client.token_id
   rescue # an error is raised if a row with the same table_id already exists in placements. Thanks to the UNIQUE constraint
     raise 'This table is not free'
@@ -141,14 +145,16 @@ end
 # =>       order_drinks(token, my_order)
 def order_drinks(token, order_lines)
   if is_token_valid token
-    order = Order.create(:order_time => Time.now, :passes_by => token)
-    order_lines.each do |line| # iterate over the array and do something for each of its value
-      od = OrderedDrink.new
-      od.order_id = order.order_id
-      od.drink_id = line[:drink_id]
-      od.qty = line[:qty]
-      od.save # OrderedDrink.create(:order_id => order.order_id, :drink_id => line[:drink_id], :qty => line[:qty])
-    end
+    DB.transaction do # new transaction: if something goes wrong, no order and no order_lines will be created
+      order = Order.create(:order_time => Time.now, :passes_by => token)
+      order_lines.each do |line| # iterate over the array and do something for each of its value
+        od = OrderedDrink.new
+        od.order_id = order.order_id
+        od.drink_id = line[:drink_id]
+        od.qty = line[:qty]
+        od.save # OrderedDrink.create(:order_id => order.order_id, :drink_id => line[:drink_id], :qty => line[:qty])
+      end
+    end # COMMIT
     return order.order_id
   else
     raise 'The provided token is not valid'
@@ -160,7 +166,7 @@ end
 # PRE: the client token is valid and correspond to an occupied table
 # POST: issued ticke correspond to all (and only) ordered drinks at that table
 def issue_ticket(token)
-  if is_token_valid token
+  if is_token_valid token # NOTE: we don't need a transaction here because we are just reading data. For each query done to the databse, Sequel will automatically wrap it in a transaction
     total = 0.0
     details = []
     client = Client[:token_id => token] # Easy way to retrieve a client based on its token_id
@@ -185,12 +191,14 @@ end
 # POST: the client token can no longer be used to order drinks
 def pay_table(token, amount)
   if is_token_valid token
+    DB.transaction do # new transaction to be sure that nothing change on the database while we operate the payment
       ticket = issue_ticket(token) # let's use the issue_ticket method to compute the total price to pay
       if amount < ticket[:total]
-        raise "the given amount must be greater or equal to #{ticket[:total]}"
+        raise "the given amount must be greater or equal to #{ticket[:total]}" # the error produce a ROLLBACK of the transaction
       else
         Placement[:client_id => token].destroy # we retrieve the Placement associated to the token and delete it from the database
       end
+    end # COMMIT the transaction
     return
   else
     raise 'The provided token is not valid'
