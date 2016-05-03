@@ -34,7 +34,7 @@ $$ LANGUAGE plpgsql;
  * OrderDrinks
  * IN: a client token
  * IN: a list of order_line 
- * OUT: the unique number if the created order
+ * OUT: the unique number of the created order
  * PRE: the client token is valid and correspond to an occupied table
  * POST: the order is created, its number is the one returned
  *

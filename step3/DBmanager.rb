@@ -116,6 +116,7 @@ end
 # POST: issued token can be used for ordering drinks
 def acquire_table(codebar)
   begin
+    client = nil
     DB.transaction do # new explicit transaction to avoid that the generated token at line 120 remains if the table is not free
       client = Client.create() # we can create a client in the databse simply like this. Sequel convert it to a SQL statement INSERT INTO clients ...
       p = Placement.new # The other way to create a row in the database is by first creating the object
@@ -145,6 +146,7 @@ end
 # =>       order_drinks(token, my_order)
 def order_drinks(token, order_lines)
   if is_token_valid token
+    order = nil
     DB.transaction do # new transaction: if something goes wrong, no order and no order_lines will be created
       order = Order.create(:order_time => Time.now, :passes_by => token)
       order_lines.each do |line| # iterate over the array and do something for each of its value

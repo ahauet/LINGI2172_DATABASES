@@ -69,7 +69,7 @@ $$ LANGUAGE plpgsql;
  * POST: issued ticke correspond to all (and only) ordered drinks at that table
  *
  * Usage
- * 
+ * select issue_ticket(token);
  */
 CREATE OR REPLACE FUNCTION issue_ticket(token integer) RETURNS ticket AS 
 $$
